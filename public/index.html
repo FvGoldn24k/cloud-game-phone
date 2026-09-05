@@ -1,100 +1,363 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Cloud Game Phone</title>
-<style>
-*{box-sizing:border-box}body{margin:0;background:#0b0d10;color:#fff;font-family:system-ui,Arial}
-main{width:min(440px,100%);margin:auto;padding:14px}.phone{background:#1a1d22;border:1px solid #333;border-radius:28px;padding:10px}
-.screen{height:650px;border-radius:20px;overflow:hidden;background:#0f1115;position:relative}
-.top{height:40px;padding:0 14px;display:flex;justify-content:space-between;align-items:center;background:#191b20;font-size:12px;color:#aaa}
-.home,.game{height:calc(100% - 40px);padding:22px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
-h1{font-size:22px;margin:0 0 8px}.muted{color:#9da2ad;font-size:13px}
-.apps{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;margin-top:25px}
-button{border:0;border-radius:14px;padding:14px;font-weight:800;font-size:15px;cursor:pointer}
-.app{background:#fff;color:#111}.app b{font-size:28px;display:block;margin-bottom:5px}
-#viewer{width:100%;height:330px;border-radius:16px;background:radial-gradient(circle,#252b36,#101216 65%);display:flex;align-items:center;justify-content:center}
-.icon{font-size:55px}.game h2{margin:8px}.game p{color:#adb2bd;font-size:13px}
-.actions{display:flex;gap:8px;width:100%;margin-top:12px}.actions button{flex:1;background:#30343d;color:#fff}
-.status{font-size:12px;color:#9da2ad;margin-top:12px;min-height:18px}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cloud Game Phone</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #080a0f;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    main {
+      width: min(460px, 100%);
+      margin: auto;
+      padding: 16px;
+    }
+
+    h1 {
+      margin: 5px 0;
+      font-size: 26px;
+    }
+
+    .sub {
+      color: #9ca3af;
+      margin-bottom: 16px;
+    }
+
+    .card {
+      background: #11151d;
+      border: 1px solid #29303b;
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #8ff0a4;
+      margin-bottom: 12px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      background: #36d66b;
+      border-radius: 50%;
+    }
+
+    button {
+      width: 100%;
+      border: 0;
+      border-radius: 13px;
+      padding: 15px;
+      margin-top: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .game {
+      background: white;
+      color: #111;
+    }
+
+    .stop {
+      background: #292f39;
+      color: white;
+    }
+
+    .screen {
+      width: 100%;
+      height: 620px;
+      background: #000;
+      border-radius: 20px;
+      overflow: hidden;
+      position: relative;
+      border: 1px solid #303744;
+    }
+
+    #video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+      display: none;
+    }
+
+    #message {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 30px;
+      color: #9ca3af;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .small {
+      font-size: 13px;
+      color: #8b93a1;
+      margin-top: 10px;
+      line-height: 1.5;
+    }
+  </style>
 </head>
+
 <body>
+
 <main>
-<h1>☁️ Cloud Game Phone</h1>
-<div class="phone">
-<div class="screen" id="screen">
-<div class="top"><span>Cloud Android</span><span id="state">Offline</span></div>
-<div class="home">
-<div style="font-size:50px">☁️</div>
-<h1>Cloud Game Phone</h1>
-<div class="muted">Deployable browser client</div>
-<div class="apps">
-<button class="app" onclick="start('clash-royale')"><b>⚔️</b>Clash Royale</button>
-<button class="app" onclick="start('pokemon-go')"><b>🗺️</b>Pokémon GO</button>
-</div>
-<div class="status" id="status">Choose a game.</div>
-</div>
-</div>
-<div class="actions">
-<button onclick="home()">⌂ Home</button>
-<button onclick="stop()">⏹ Stop</button>
-</div>
-</div>
-<p class="muted" style="font-size:11px">The server/session layer is real. A separate Android VM and authorized streaming provider are still required for the official games.</p>
+
+  <h1>Cloud Game Phone</h1>
+  <div class="sub">Real Android cloud gaming</div>
+
+  <div class="card">
+    <div class="status">
+      <span class="dot"></span>
+      <span id="status">Ready</span>
+    </div>
+
+    <button class="game" onclick="startGame('clash-royale')">
+      ⚔️ Play Clash Royale
+    </button>
+
+    <button class="game" onclick="startGame('pokemon-go')">
+      🟡 Play Pokémon GO
+    </button>
+
+    <button class="stop" onclick="stopGame()">
+      Stop session
+    </button>
+  </div>
+
+  <div class="screen">
+    <video id="video" autoplay playsinline></video>
+
+    <div id="message">
+      Choose a game to start the Android phone.
+    </div>
+  </div>
+
+  <div class="small">
+    The screen becomes live when a real Android WebRTC Gateway is connected.
+  </div>
+
 </main>
 
 <script>
-let session=null, ws=null;
+  let sessionId = null;
+  let socket = null;
+  let peer = null;
 
-async function start(game){
-  await stop(false);
-  setStatus("Creating cloud session…");
-  const r=await fetch("/api/sessions",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({game})
-  });
-  const j=await r.json();
-  if(!r.ok){setStatus(j.error||"Failed");return;}
-  session=j.id;
-  document.getElementById("state").textContent="Starting";
-  const title=game==="clash-royale"?"Clash Royale":"Pokémon GO";
-  const icon=game==="clash-royale"?"⚔️":"🗺️";
-  document.getElementById("screen").innerHTML=
-    `<div class="top"><span>Cloud Android</span><span id="state">Starting</span></div>
-     <div class="game">
-       <div id="viewer"><div><div class="icon">${icon}</div><h2>${title}</h2>
-       <p id="viewerText">Waiting for Android stream…</p></div></div>
-       <div class="status" id="status">Connecting…</div>
-     </div>`;
-  ws=new WebSocket(`${location.protocol==="https:"?"wss":"ws"}://${location.host}/ws?session=${session}`);
-  ws.onmessage=e=>{
-    if(typeof e.data!=="string")return;
-    const m=JSON.parse(e.data);
-    if(m.type==="session"){
-      const st=document.getElementById("state");
-      if(st)st.textContent=m.state;
-      if(m.state==="ready"){
-        const v=document.getElementById("viewerText");
-        if(v)v.textContent="Android stream endpoint is ready for a provider connection.";
-        setStatus("Session ready.");
-      }
-    }
-  };
-  ws.onclose=()=>setStatus("Connection closed.");
-}
-async function stop(show=true){
-  if(session){
-    try{await fetch("/api/sessions/"+session,{method:"DELETE"})}catch{}
+  /*
+    IMPORTANT:
+    Put your REAL Android Gateway address here.
+
+    Example:
+    https://your-android-gateway.example.com
+
+    Do NOT put your Render website address here unless
+    your Android Gateway is actually running there.
+  */
+  const ANDROID_GATEWAY = "";
+
+  const statusEl = document.getElementById("status");
+  const messageEl = document.getElementById("message");
+  const videoEl = document.getElementById("video");
+
+  function setStatus(text) {
+    statusEl.textContent = text;
   }
-  if(ws)ws.close();
-  session=null;ws=null;
-  if(show)home();
-}
-function home(){location.reload()}
-function setStatus(x){const e=document.getElementById("status");if(e)e.textContent=x}
+
+  async function startGame(game) {
+    if (!ANDROID_GATEWAY) {
+      setStatus("Android host needed");
+      messageEl.innerHTML =
+        "The website is ready.<br><br>" +
+        "A real Android Emulator + WebRTC Gateway still needs to be connected.";
+      return;
+    }
+
+    try {
+      setStatus("Starting Android...");
+
+      const response = await fetch("/api/sessions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ game })
+      });
+
+      if (!response.ok) {
+        throw new Error("Could not create session");
+      }
+
+      const session = await response.json();
+      sessionId = session.id;
+
+      messageEl.textContent = "Connecting to Android...";
+      connectWebRTC();
+
+    } catch (error) {
+      console.error(error);
+      setStatus("Connection failed");
+      messageEl.textContent = error.message;
+    }
+  }
+
+  function connectWebRTC() {
+
+    const gateway = ANDROID_GATEWAY
+      .replace(/^https:/, "wss:")
+      .replace(/^http:/, "ws:");
+
+    const wsUrl =
+      gateway.replace(/\/$/, "") +
+      "/api/v1/emulator/ws-jsep";
+
+    socket = new WebSocket(wsUrl);
+
+    socket.onopen = () => {
+      setStatus("Connecting...");
+    };
+
+    socket.onmessage = async event => {
+
+      const data = JSON.parse(event.data);
+
+      if (data.start) {
+
+        peer = new RTCPeerConnection({
+          iceServers: data.start.iceServers || [
+            {
+              urls: "stun:stun.l.google.com:19302"
+            }
+          ]
+        });
+
+        peer.ontrack = event => {
+
+          if (event.streams && event.streams[0]) {
+            videoEl.srcObject = event.streams[0];
+            videoEl.style.display = "block";
+            messageEl.classList.add("hidden");
+            setStatus("Android connected");
+          }
+        };
+
+        peer.onicecandidate = event => {
+
+          if (event.candidate && socket.readyState === WebSocket.OPEN) {
+
+            socket.send(JSON.stringify({
+              candidate: {
+                candidate: event.candidate.candidate,
+                sdpMid: event.candidate.sdpMid,
+                sdpMLineIndex: event.candidate.sdpMLineIndex
+              }
+            }));
+
+          }
+        };
+      }
+
+      if (data.sdp && peer) {
+
+        await peer.setRemoteDescription(
+          new RTCSessionDescription(data.sdp)
+        );
+
+        if (data.sdp.type === "offer") {
+
+          const answer = await peer.createAnswer();
+
+          await peer.setLocalDescription(answer);
+
+          socket.send(JSON.stringify({
+            sdp: {
+              type: answer.type,
+              sdp: answer.sdp
+            }
+          }));
+        }
+      }
+
+      if (data.candidate && peer) {
+
+        try {
+          await peer.addIceCandidate(
+            new RTCIceCandidate(data.candidate)
+          );
+        } catch (e) {
+          console.log("ICE error", e);
+        }
+      }
+    };
+
+    socket.onerror = () => {
+      setStatus("Android connection error");
+      messageEl.textContent =
+        "Could not connect to the Android Gateway.";
+    };
+
+    socket.onclose = () => {
+      if (statusEl.textContent === "Android connected") {
+        setStatus("Disconnected");
+      }
+    };
+  }
+
+  async function stopGame() {
+
+    if (socket) {
+      try {
+        socket.send(JSON.stringify({ bye: true }));
+      } catch {}
+      socket.close();
+      socket = null;
+    }
+
+    if (peer) {
+      peer.close();
+      peer = null;
+    }
+
+    if (sessionId) {
+      try {
+        await fetch("/api/sessions/" + sessionId, {
+          method: "DELETE"
+        });
+      } catch {}
+
+      sessionId = null;
+    }
+
+    videoEl.srcObject = null;
+    videoEl.style.display = "none";
+
+    messageEl.classList.remove("hidden");
+    messageEl.textContent =
+      "Choose a game to start the Android phone.";
+
+    setStatus("Ready");
+  }
 </script>
+
 </body>
-  </html>
+</html>
