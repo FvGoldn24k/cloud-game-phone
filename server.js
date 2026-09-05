@@ -13,11 +13,17 @@ const sessions = new Map();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
+app.get("/health", (req, res) => {
+  res.json({ ok: true });
+});
+
 app.post("/api/sessions", (req, res) => {
   const game = req.body?.game;
 
   if (!["clash-royale", "pokemon-go"].includes(game)) {
-    return res.status(400).json({ error: "Unsupported game" });
+    return res.status(400).json({
+      error: "Unsupported game"
+    });
   }
 
   const id = crypto.randomUUID();
@@ -25,29 +31,29 @@ app.post("/api/sessions", (req, res) => {
   const session = {
     id,
     game,
-    state: "starting",
+    state: "waiting-for-android",
     createdAt: Date.now()
   };
 
   sessions.set(id, session);
 
-  setTimeout(() => {
-    const current = sessions.get(id);
-    if (current) {
-      current.state = "ready";
-      broadcast(id, {
-        type: "session",
-        state: "ready",
-        game: current.game
-      });
-    }
-  }, 1500);
-
   res.json({
-    id,
-    game,
+    id: session.id,
+    game: session.game,
     state: session.state
   });
+});
+
+app.get("/api/sessions/:id", (req, res) => {
+  const session = sessions.get(req.params.id);
+
+  if (!session) {
+    return res.status(404).json({
+      error: "Session not found"
+    });
+  }
+
+  res.json(session);
 });
 
 app.delete("/api/sessions/:id", (req, res) => {
@@ -55,25 +61,15 @@ app.delete("/api/sessions/:id", (req, res) => {
   res.json({ ok: true });
 });
 
-app.get("/api/sessions/:id", (req, res) => {
-  const session = sessions.get(req.params.id);
-
-  if (!session) {
-    return res.status(404).json({ error: "Session not found" });
-  }
-
-  res.json(session);
-});
-
 function broadcast(id, message) {
-  wss.clients.forEach((client) => {
+  for (const client of wss.clients) {
     if (
       client.readyState === WebSocket.OPEN &&
       client.sessionId === id
     ) {
       client.send(JSON.stringify(message));
     }
-  });
+  }
 }
 
 server.on("upgrade", (request, socket, head) => {
@@ -88,12 +84,13 @@ server.on("upgrade", (request, socket, head) => {
   wss.handleUpgrade(request, socket, head, (ws) => {
     ws.sessionId = sessionId;
 
-    ws.send(
-      JSON.stringify({
-        type: "session",
-        state: sessions.get(sessionId).state
-      })
-    );
+    const session = sessions.get(sessionId);
+
+    ws.send(JSON.stringify({
+      type: "session",
+      state: session.state,
+      game: session.game
+    }));
 
     wss.emit("connection", ws, request);
   });
@@ -101,7 +98,7 @@ server.on("upgrade", (request, socket, head) => {
 
 wss.on("connection", (ws) => {
   ws.on("message", (data) => {
-    // Reserved for future Android streaming/input messages.
+    // Android WebRTC input will be connected here.
   });
 });
 
