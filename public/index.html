@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cloud Game Phone</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0b0d10;color:#fff;font-family:system-ui,Arial}
+main{width:min(440px,100%);margin:auto;padding:14px}.phone{background:#1a1d22;border:1px solid #333;border-radius:28px;padding:10px}
+.screen{height:650px;border-radius:20px;overflow:hidden;background:#0f1115;position:relative}
+.top{height:40px;padding:0 14px;display:flex;justify-content:space-between;align-items:center;background:#191b20;font-size:12px;color:#aaa}
+.home,.game{height:calc(100% - 40px);padding:22px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+h1{font-size:22px;margin:0 0 8px}.muted{color:#9da2ad;font-size:13px}
+.apps{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;margin-top:25px}
+button{border:0;border-radius:14px;padding:14px;font-weight:800;font-size:15px;cursor:pointer}
+.app{background:#fff;color:#111}.app b{font-size:28px;display:block;margin-bottom:5px}
+#viewer{width:100%;height:330px;border-radius:16px;background:radial-gradient(circle,#252b36,#101216 65%);display:flex;align-items:center;justify-content:center}
+.icon{font-size:55px}.game h2{margin:8px}.game p{color:#adb2bd;font-size:13px}
+.actions{display:flex;gap:8px;width:100%;margin-top:12px}.actions button{flex:1;background:#30343d;color:#fff}
+.status{font-size:12px;color:#9da2ad;margin-top:12px;min-height:18px}
+</style>
+</head>
+<body>
+<main>
+<h1>☁️ Cloud Game Phone</h1>
+<div class="phone">
+<div class="screen" id="screen">
+<div class="top"><span>Cloud Android</span><span id="state">Offline</span></div>
+<div class="home">
+<div style="font-size:50px">☁️</div>
+<h1>Cloud Game Phone</h1>
+<div class="muted">Deployable browser client</div>
+<div class="apps">
+<button class="app" onclick="start('clash-royale')"><b>⚔️</b>Clash Royale</button>
+<button class="app" onclick="start('pokemon-go')"><b>🗺️</b>Pokémon GO</button>
+</div>
+<div class="status" id="status">Choose a game.</div>
+</div>
+</div>
+<div class="actions">
+<button onclick="home()">⌂ Home</button>
+<button onclick="stop()">⏹ Stop</button>
+</div>
+</div>
+<p class="muted" style="font-size:11px">The server/session layer is real. A separate Android VM and authorized streaming provider are still required for the official games.</p>
+</main>
+
+<script>
+let session=null, ws=null;
+
+async function start(game){
+  await stop(false);
+  setStatus("Creating cloud session…");
+  const r=await fetch("/api/sessions",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({game})
+  });
+  const j=await r.json();
+  if(!r.ok){setStatus(j.error||"Failed");return;}
+  session=j.id;
+  document.getElementById("state").textContent="Starting";
+  const title=game==="clash-royale"?"Clash Royale":"Pokémon GO";
+  const icon=game==="clash-royale"?"⚔️":"🗺️";
+  document.getElementById("screen").innerHTML=
+    `<div class="top"><span>Cloud Android</span><span id="state">Starting</span></div>
+     <div class="game">
+       <div id="viewer"><div><div class="icon">${icon}</div><h2>${title}</h2>
+       <p id="viewerText">Waiting for Android stream…</p></div></div>
+       <div class="status" id="status">Connecting…</div>
+     </div>`;
+  ws=new WebSocket(`${location.protocol==="https:"?"wss":"ws"}://${location.host}/ws?session=${session}`);
+  ws.onmessage=e=>{
+    if(typeof e.data!=="string")return;
+    const m=JSON.parse(e.data);
+    if(m.type==="session"){
+      const st=document.getElementById("state");
+      if(st)st.textContent=m.state;
+      if(m.state==="ready"){
+        const v=document.getElementById("viewerText");
+        if(v)v.textContent="Android stream endpoint is ready for a provider connection.";
+        setStatus("Session ready.");
+      }
+    }
+  };
+  ws.onclose=()=>setStatus("Connection closed.");
+}
+async function stop(show=true){
+  if(session){
+    try{await fetch("/api/sessions/"+session,{method:"DELETE"})}catch{}
+  }
+  if(ws)ws.close();
+  session=null;ws=null;
+  if(show)home();
+}
+function home(){location.reload()}
+function setStatus(x){const e=document.getElementById("status");if(e)e.textContent=x}
+</script>
+</body>
+  </html>
